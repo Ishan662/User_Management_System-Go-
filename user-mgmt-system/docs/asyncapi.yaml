@@ -1,0 +1,34 @@
+asyncapi: 2.6.0
+info:
+  title: User Events API
+  version: 1.0.0
+  description: Real-time user updates via WebSockets and NATS
+
+servers:
+  local:
+    url: localhost:8080
+    protocol: ws
+    description: Gateway WebSocket Endpoint
+
+channels:
+  /corrections:
+    subscribe:
+      summary: Receive real-time user updates (Created/Deleted)
+      message:
+        $ref: '#/components/messages/UserEvent'
+
+components:
+  messages:
+    UserEvent:
+      payload:
+        type: object
+        properties:
+          user_id:
+            type: string
+            format: uuid
+          first_name:
+            type: string
+          last_name:
+            type: string
+          email:
+            type: string

@@ -1,0 +1,73 @@
+openapi: 3.0.3
+info:
+  title: User Management Gateway API
+  description: REST API for Managing Users via NATS Microservices
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local Gateway Server
+
+paths:
+  /users:
+    post:
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+      responses:
+        '201':
+          description: User created successfully
+        '400':
+          description: Invalid request body
+
+  /users/{id}:
+    get:
+      summary: Get user details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User data retrieved
+        '404':
+          description: User not found
+    delete:
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User deleted successfully
+
+components:
+  schemas:
+    UserRequest:
+      type: object
+      required:
+        - first_name
+        - last_name
+        - email
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        age:
+          type: integer
