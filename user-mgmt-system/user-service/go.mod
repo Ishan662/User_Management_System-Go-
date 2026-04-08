@@ -1,6 +1,6 @@
 module github.com/ishan662/user-service
 
-go 1.25.0
+go 1.24
 
 require (
 	github.com/go-playground/validator/v10 v10.30.2
