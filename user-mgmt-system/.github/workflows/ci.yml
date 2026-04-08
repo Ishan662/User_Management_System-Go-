@@ -79,4 +79,5 @@ jobs:
           docker-compose ps
           # Verify the Gateway is responding
           curl -f http://localhost:8080/users/health || exit 0 
-          docker-compose down
+          docker-compose down 
+    # trigger check
