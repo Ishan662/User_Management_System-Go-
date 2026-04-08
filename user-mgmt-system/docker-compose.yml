@@ -23,7 +23,7 @@ services:
 
   user-service:
     build:
-      context: .
+      context: ..
       dockerfile: user-service/Dockerfile
     environment:
       - DB_URL=postgres://user:password@postgres:5432/user_db?sslmode=disable
@@ -36,7 +36,7 @@ services:
 
   gateway:
     build:
-      context: .
+      context: ..
       dockerfile: gateway/Dockerfile
     environment:
       - NATS_URL=nats://nats:4222
