@@ -1,20 +1,20 @@
+# Stage 1: Build
 FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-COPY go.work go.work.sum ./
+COPY user-service/ /user-service/
 COPY gateway/go.mod gateway/go.sum ./gateway/
-COPY user-service/go.mod user-service/go.sum ./user-service/
-
-RUN cd gateway && go mod download
 
 COPY gateway/ ./gateway/
-COPY user-service/ ./user-service/
-
-RUN cd gateway && go build -o /gateway-bin main.go
+WORKDIR /app/gateway
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/gateway-service .
 
 FROM alpine:latest
+RUN apk --no-cache add ca-certificates
 WORKDIR /root/
-COPY --from=builder /gateway-bin .
+COPY --from=builder /app/gateway-service .
 
-CMD ["./gateway-bin"]
+EXPOSE 8080
+CMD ["./gateway-service"]

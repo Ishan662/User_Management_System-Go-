@@ -7,13 +7,26 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/ishan662/user-service/internal/db"
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/nats-io/nats.go"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
+
+var validate = validator.New()
+
+func formatValidationError(err error) string {
+	var sb strings.Builder
+	for _, err := range err.(validator.ValidationErrors) {
+		sb.WriteString(err.Field() + " is " + err.Tag() + "; ")
+	}
+	return sb.String()
+}
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
@@ -71,12 +84,12 @@ func main() {
 
 	_, err = nc.Subscribe("user.create", func(m *nats.Msg) {
 		var req struct {
-			FirstName string         `json:"first_name"`
-			LastName  string         `json:"last_name"`
-			Email     string         `json:"email"`
-			Phone     *string        `json:"phone"`
-			Age       *int32         `json:"age"`
-			Status    *db.UserStatus `json:"status"`
+			FirstName string         `json:"first_name" validate:"required,min=2"`
+			LastName  string         `json:"last_name" validate:"required,min=2"`
+			Email     string         `json:"email" validate:"required,email"`
+			Phone     *string        `json:"phone" validate:"omitempty,e164"`
+			Age       *int32         `json:"age" validate:"omitempty,gte=0,lte=150"`
+			Status    *db.UserStatus `json:"status" validate:"omitempty,oneof=Active Inactive"`
 		}
 
 		if err :=json.Unmarshal(m.Data, &req); err != nil {
@@ -85,8 +98,9 @@ func main() {
 			return
 		}
 
-		if req.FirstName == "" || req.LastName == "" || req.Email == "" {
-			m.Respond([]byte("Error: first_name, last_name, and email are required"))
+		if err :=validate.Struct(req); err != nil {
+			slog.Warn("Validation Failed at user service boundry", "error", err)
+			m.Respond([]byte("Error: Validation Failed - " + formatValidationError((err))))
 			return
 		}
 

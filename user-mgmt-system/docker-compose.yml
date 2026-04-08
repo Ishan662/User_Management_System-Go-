@@ -1,18 +1,25 @@
+version: '3.8'
+
 services:
   postgres:
-    image: postgres:15
+    image: postgres:15-alpine
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: user_db
     ports:
       - "5432:5432"
+    healthcheck: # Ensures services wait until the DB is ACTUALLY ready
+      test: ["CMD-SHELL", "pg_isready -U user -d user_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   nats:
     image: nats:latest
     ports:
       - "4222:4222"
-      - "8222:8222" 
+      - "8222:8222" # NATS Management/Monitoring port
 
   user-service:
     build:
@@ -22,8 +29,10 @@ services:
       - DB_URL=postgres://user:password@postgres:5432/user_db?sslmode=disable
       - NATS_URL=nats://nats:4222
     depends_on:
-      - postgres
-      - nats
+      postgres:
+        condition: service_healthy # Wait for healthcheck to pass
+      nats:
+        condition: service_started
 
   gateway:
     build:
@@ -35,3 +44,4 @@ services:
       - "8080:8080"
     depends_on:
       - nats
+      - user-service
